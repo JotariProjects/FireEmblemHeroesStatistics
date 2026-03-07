@@ -107,6 +107,15 @@ function render(filter = "") {
   tableHead.innerHTML = "";
   tableBody.innerHTML = "";
 
+  // Check if data exists before proceeding
+  if (!headers.length || !rows.length) {
+    console.error("No data to render.");
+    return;  // Stop rendering if there's no data
+  }
+
+  // Find the index of the "Mug" column
+  const mugIndex = headers.indexOf("Mug");
+
   // Build header row
   const headerRow = document.createElement("tr");
   headers.forEach((h, index) => {
@@ -144,7 +153,6 @@ function render(filter = "") {
 
   // Find useful column indexes
   const characterIndex = headers.indexOf("Character");
-  // Remove second declaration of mugIndex here as it's already defined earlier
   const moveTypeIndex = headers.indexOf("Move Type");
 
   const rowsToRender = rows.filter(r => {
