@@ -26,6 +26,301 @@
       background: var(--panel); color: var(--text);
     }
     table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      font-size: 14px;
+    }
+
+    thead {
+      background: #1b2050;
+      position: sticky;
+      top: 0;
+    }
+
+    th, td {
+      border: 1px solid #2a2f7a;
+      padding: 6px 8px;
+      text-align: center;
+    }
+
+    th {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    td:first-child,
+    th:first-child {
+      text-align: left;
+    }
+
+    img.mug {
+      width: 50px;
+      height: 50px;
+      object-fit: cover;
+      border-radius: 6px;
+    }
+
+    .name { font-weight: 700; margin-bottom: .25rem; }
+    .meta { color: var(--muted); font-size: .85rem; }
+    footer { opacity: .7; text-align: center; padding: 1.5rem 0; }
+    a { color: var(--accent); text-decoration: none; }
+
+    /* Loading Spinner Styles */
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+      color: var(--accent);
+      font-size: 2rem;
+    }
+
+    #loading::after {
+      content: '⏳ Loading...';
+    }
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Choose Your Legends Data</h1>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <input id="search" placeholder="Search…" />
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="dataTable">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <footer>
+    Hosted free on GitHub Pages · Data from Google Sheets
+  </footer>
+
+  <!-- Loading Spinner -->
+  <div id="loading"></div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycby2SIa1xkldeimH7OrkltvK9BoPE07PELtGEriB5gPZ8GSzu42ErrvZo3M73S5k8aBycg/exec";
+    const search = document.getElementById('search');
+    const loading = document.getElementById('loading');  // The loading spinner
+
+    let headers = [];
+    let rows = [];
+    let sortColumn = null;
+    let sortAsc = true;
+
+    const tableHead = document.querySelector("#dataTable thead");
+    const tableBody = document.querySelector("#dataTable tbody");
+
+    function render(filter = "") {
+      const f = filter.toLowerCase();
+      tableHead.innerHTML = "";
+      tableBody.innerHTML = "";
+
+      // Check if data exists before proceeding
+      if (!headers.length || !rows.length) {
+        console.error("No data to render.");
+        return;
+      }
+
+      // Find the index of the "Mug" column
+      const mugIndex = headers.indexOf("Mug");
+
+      // Build header row
+      const headerRow = document.createElement("tr");
+      headers.forEach((h, index) => {
+        const th = document.createElement("th");
+
+        let arrow = "";
+        if (sortColumn === index) {
+          arrow = sortAsc ? " ▲" : " ▼";
+        }
+
+        th.textContent = h + arrow;
+        th.style.cursor = "pointer";
+
+        // Disable sorting for the "Mug" column
+        if (index === mugIndex) {
+          th.style.cursor = "default";
+          th.onclick = (e) => e.preventDefault();
+        } else {
+          th.onclick = () => {
+            if (sortColumn === index) {
+              sortAsc = !sortAsc;
+            } else {
+              sortColumn = index;
+              sortAsc = false; // first click = descending
+            }
+
+            sortRows();
+            render(search.value);
+          };
+        }
+
+        headerRow.appendChild(th);
+      });
+      tableHead.appendChild(headerRow);
+
+      // Find useful column indexes
+      const characterIndex = headers.indexOf("Character");
+      const moveTypeIndex = headers.indexOf("Move Type");
+
+      const rowsToRender = rows.filter(r => {
+        return !filter || (characterIndex !== -1 && r[characterIndex] && r[characterIndex].toString().toLowerCase().includes(f));
+      });
+
+      if (sortColumn === null) {
+        rowsToRender.forEach(r => {
+          const tr = document.createElement("tr");
+          r.forEach((cell, i) => {
+            const td = document.createElement("td");
+
+            if (i === mugIndex && cell) {
+              const img = document.createElement("img");
+              img.src = cell;
+              img.className = "mug";
+              td.appendChild(img);
+            } else if (i === moveTypeIndex && cell) {
+              const img = document.createElement("img");
+              img.src = cell;
+              img.className = "moveType";
+              td.appendChild(img);
+            } else {
+              if (!isNaN(cell) && cell !== "") {
+                td.textContent = Number(cell).toLocaleString(undefined, { maximumFractionDigits: 2 });
+              } else {
+                td.textContent = cell;
+              }
+            }
+
+            tr.appendChild(td);
+          });
+
+          tableBody.appendChild(tr);
+        });
+      } else {
+        rowsToRender.filter(r => r[sortColumn] !== null && r[sortColumn] !== "" && r[sortColumn] !== undefined)
+          .forEach(r => {
+            const tr = document.createElement("tr");
+            r.forEach((cell, i) => {
+              const td = document.createElement("td");
+
+              if (i === mugIndex && cell) {
+                const img = document.createElement("img");
+                img.src = cell;
+                img.className = "mug";
+                td.appendChild(img);
+              } else if (i === moveTypeIndex && cell) {
+                const img = document.createElement("img");
+                img.src = cell;
+                img.className = "moveType";
+                td.appendChild(img);
+              } else {
+                if (!isNaN(cell) && cell !== "") {
+                  td.textContent = Number(cell).toLocaleString(undefined, { maximumFractionDigits: 2 });
+                } else {
+                  td.textContent = cell;
+                }
+              }
+
+              tr.appendChild(td);
+            });
+
+            tableBody.appendChild(tr);
+          });
+      }
+    }
+
+    function sortRows() {
+      if (sortColumn === null) return;
+
+      rows.sort((a, b) => {
+        let valA = a[sortColumn];
+        let valB = b[sortColumn];
+
+        const cleanA = valA ? valA.toString().replace(/,/g, "") : "";
+        const cleanB = valB ? valB.toString().replace(/,/g, "") : "";
+
+        const numA = parseFloat(cleanA);
+        const numB = parseFloat(cleanB);
+
+        if (!isNaN(numA) && !isNaN(numB)) {
+          return sortAsc ? numA - numB : numB - numA;
+        }
+
+        valA = valA ? valA.toString().toLowerCase() : "";
+        valB = valB ? valB.toString().toLowerCase() : "";
+
+        if (valA < valB) return sortAsc ? -1 : 1;
+        if (valA > valB) return sortAsc ? 1 : -1;
+        return 0;
+      });
+    }
+
+    // Show loading spinner
+    function showLoading() {
+      loading.style.display = 'block';
+    }
+
+    // Hide loading spinner
+    function hideLoading() {
+      loading.style.display = 'none';
+    }
+
+    showLoading();  // Show loading spinner when starting to fetch data
+
+    fetch(API_URL + "?endpoint=forwebsite")
+      .then(r => r.json())
+      .then(data => {
+        headers = data.headers;
+        rows = data.rows;
+        render();
+        hideLoading();  // Hide loading spinner once data is fetched
+      })
+      .catch(err => {
+        console.error("FETCH FAILED:", err);
+        hideLoading();  // Hide loading spinner if the fetch fails
+      });
+
+    search.addEventListener('input', e => render(e.target.value));
+  </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Sheets‑Backed Site</title>
+  <style>
+    :root {
+      --bg: #0f1220;
+      --panel: #161a2f;
+      --text: #e7e9ff;
+      --muted: #aab0ff;
+      --accent: #7c7cff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu;
+      background: linear-gradient(180deg, #0b0e1a, var(--bg)); color: var(--text);
+    }
+    header { padding: 1.25rem 1rem; border-bottom: 1px solid #232766; }
+    h1 { margin: 0; font-size: 1.4rem; }
+    main { max-width: 1680px; margin: 0 auto; padding: 1rem; }
+    .toolbar { display: flex; gap: .5rem; margin-bottom: .75rem; }
+    input {
+      flex: 1; padding: .6rem .7rem; border-radius: 10px; border: 1px solid #2a2f7a;
+      background: var(--panel); color: var(--text);
+    }
+    table {
   width: 100%;
   border-collapse: collapse;
   background: var(--panel);
