@@ -1,249 +1,359 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>My Sheets‑Backed Site</title>
-  <style>
-    :root {
-      --bg: #0f1220;
-      --panel: #161a2f;
-      --text: #e7e9ff;
-      --muted: #aab0ff;
-      --accent: #7c7cff;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu;
-      background: linear-gradient(180deg, #0b0e1a, var(--bg)); color: var(--text);
-    }
-    header { padding: 1.25rem 1rem; border-bottom: 1px solid #232766; }
-    h1 { margin: 0; font-size: 1.4rem; }
-    main { max-width: 1680px; margin: 0 auto; padding: 1rem; }
-    .toolbar { display: flex; gap: .5rem; margin-bottom: .75rem; }
-    input {
-      flex: 1; padding: .6rem .7rem; border-radius: 10px; border: 1px solid #2a2f7a;
-      background: var(--panel); color: var(--text);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: var(--panel);
-      font-size: 14px;
-    }
-    thead {
-      background: #1b2050;
-      position: sticky;
-      top: 0;
-    }
-    th, td {
-      border: 1px solid #2a2f7a;
-      padding: 6px 8px;
-      text-align: center;
-    }
-    th {
-      font-weight: 700;
-      color: var(--accent);
-    }
-    #dataTable td
-    {
-      color: black !important;
-    }
-    td:first-child,
-    th:first-child {
-      text-align: left;
-    }
-    img.mug {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 6px;
-    }
-    .name { font-weight: 700; margin-bottom: .25rem; }
-    .meta { color: var(--muted); font-size: .85rem; }
-    footer { opacity: .7; text-align: center; padding: 1.5rem 0; }
-    a { color: var(--accent); text-decoration: none; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Sheets-Backed Site</title>
 
-    /* Loading Spinner Styles */
-    #loading {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      display: none;
-      color: var(--accent);
-      font-size: 2rem;
-    }
-    #loading::after {
-      content: '⏳ Loading...';
-    }
-  </style>
+<style>
+:root{
+--bg:#0f1220;
+--panel:#161a2f;
+--text:#e7e9ff;
+--muted:#aab0ff;
+--accent:#7c7cff;
+}
+
+*{box-sizing:border-box;}
+
+body{
+margin:0;
+font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
+background:linear-gradient(180deg,#0b0e1a,var(--bg));
+color:var(--text);
+}
+
+header{
+padding:1.25rem 1rem;
+border-bottom:1px solid #232766;
+}
+
+h1{
+margin:0;
+font-size:1.4rem;
+}
+
+main{
+max-width:1680px;
+margin:0 auto;
+padding:1rem;
+}
+
+.toolbar{
+display:flex;
+gap:.5rem;
+margin-bottom:.75rem;
+}
+
+input{
+flex:1;
+padding:.6rem .7rem;
+border-radius:10px;
+border:1px solid #2a2f7a;
+background:var(--panel);
+color:var(--text);
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+background:var(--panel);
+font-size:14px;
+}
+
+thead{
+background:#1b2050;
+position:sticky;
+top:0;
+z-index:2;
+}
+
+th,td{
+border:1px solid #2a2f7a;
+padding:6px 8px;
+text-align:center;
+}
+
+th{
+font-weight:700;
+color:var(--accent);
+cursor:pointer;
+}
+
+td:first-child,
+th:first-child{
+text-align:left;
+position:sticky;
+left:0;
+background:#1b2050;
+z-index:1;
+}
+
+tbody tr{
+transition:background .15s ease;
+}
+
+tbody tr:hover{
+background:#232766;
+}
+
+#dataTable td{
+color:black !important;
+}
+
+img.mug{
+width:50px;
+height:50px;
+object-fit:cover;
+border-radius:6px;
+}
+
+img.moveType{
+width:28px;
+height:28px;
+object-fit:contain;
+}
+
+footer{
+opacity:.7;
+text-align:center;
+padding:1.5rem 0;
+}
+
+a{
+color:var(--accent);
+text-decoration:none;
+}
+
+/* LOADING OVERLAY */
+
+#loading{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.65);
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:2rem;
+color:var(--accent);
+z-index:999;
+}
+
+.hidden{
+display:none;
+}
+
+</style>
 </head>
+
 <body>
-  <header>
-    <h1>Choose Your Legends Data</h1>
-  </header>
 
-  <main>
-    <div class="toolbar">
-      <input id="search" placeholder="Search…" />
-    </div>
-    <div style="overflow-x:auto;">
-      <table id="dataTable">
-        <thead></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </main>
+<header>
+<h1>Choose Your Legends Data</h1>
+</header>
 
-  <footer>
-    Hosted free on GitHub Pages · Data from Google Sheets
-  </footer>
+<main>
 
-  <!-- Loading Spinner -->
-  <div id="loading"></div>
+<div class="toolbar">
+<input id="search" placeholder="Search…">
+</div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycby2SIa1xkldeimH7OrkltvK9BoPE07PELtGEriB5gPZ8GSzu42ErrvZo3M73S5k8aBycg/exec";
-    const search = document.getElementById('search');
-    const loading = document.getElementById('loading'); 
+<div style="overflow-x:auto;">
+<table id="dataTable">
+<thead></thead>
+<tbody></tbody>
+</table>
+</div>
 
-    let headers = [];
-    let rows = [];
-    let bgColors = [];
-    let sortColumn = null;
-    let sortAsc = true;
+</main>
 
-    const tableHead = document.querySelector("#dataTable thead");
-    const tableBody = document.querySelector("#dataTable tbody");
+<footer>
+Hosted free on GitHub Pages · Data from Google Sheets
+</footer>
 
-    function showLoading() {
-      search.style.display = 'none'; 
-      loading.style.display = 'block';  
-    }
+<div id="loading">⏳ Loading...</div>
 
-    function hideLoading() {
-      search.style.display = 'block'; 
-      loading.style.display = 'none';  
-    }
+<script>
 
-    function render(filter = "") {
-      const f = filter.toLowerCase();
-      tableHead.innerHTML = "";
-      tableBody.innerHTML = "";
+const API_URL="https://script.google.com/macros/s/AKfycby2SIa1xkldeimH7OrkltvK9BoPE07PELtGEriB5gPZ8GSzu42ErrvZo3M73S5k8aBycg/exec";
 
-      if (!headers.length || !rows.length) return;
+const search=document.getElementById("search");
+const loading=document.getElementById("loading");
 
-      const mugIndex = headers.indexOf("Mug");
-      const moveTypeIndex = headers.indexOf("Move Type");
-      const characterIndex = headers.indexOf("Character");
+const tableHead=document.querySelector("#dataTable thead");
+const tableBody=document.querySelector("#dataTable tbody");
 
-      // Build header
-      const headerRow = document.createElement("tr");
-      headers.forEach((h, index) => {
-        const th = document.createElement("th");
-        let arrow = "";
-        if (sortColumn === index) arrow = sortAsc ? " ▲" : " ▼";
-        th.textContent = h + arrow;
+let headers=[];
+let data=[];
 
-        if (index === mugIndex) {
-          th.style.cursor = "default"; 
-          th.onclick = e => e.preventDefault();
-        } else {
-          th.style.cursor = "pointer";
-          th.onclick = () => {
-            if (sortColumn === index) sortAsc = !sortAsc;
-            else { sortColumn = index; sortAsc = false; }
-            sortRows();
-            render(search.value);
-          };
-        }
-        headerRow.appendChild(th);
-      });
-      tableHead.appendChild(headerRow);
+let sortColumn=null;
+let sortAsc=true;
 
-      // Map rows to include original index
-      const rowsWithIndex = rows.map((r, idx) => ({ row: r, idx }));
-      const rowsToRender = rowsWithIndex.filter(obj => {
-        const r = obj.row;
-        return !filter || (characterIndex !== -1 && r[characterIndex]?.toString().toLowerCase().includes(f));
-      });
+function showLoading(){
+loading.classList.remove("hidden");
+}
 
-      // Render rows
-      rowsToRender.forEach(({ row: r, idx }) => {
-        const tr = document.createElement("tr");
-        r.forEach((cell, i) => {
-          const td = document.createElement("td");
+function hideLoading(){
+loading.classList.add("hidden");
+}
 
-          if (bgColors && bgColors[idx] && bgColors[idx][i]) {
-            td.style.backgroundColor = bgColors[idx][i];
-          }
+function sortData(){
 
-          if (i === mugIndex && cell) {
-            const img = document.createElement("img");
-            img.src = cell;
-            img.className = "mug";
-            td.appendChild(img);
-          } else if (i === moveTypeIndex && cell) {
-            const img = document.createElement("img");
-            img.src = cell;
-            img.className = "moveType";
-            td.appendChild(img);
-          } else {
-            if (!isNaN(cell) && cell !== "") {
-              td.textContent = Number(cell).toLocaleString(undefined, { maximumFractionDigits: 2 });
-            } else {
-              td.textContent = cell;
-            }
-          }
+if(sortColumn===null)return;
 
-          tr.appendChild(td);
-        });
-        tableBody.appendChild(tr);
-      });
-    }
+data.sort((a,b)=>{
 
-    function sortRows() {
-      if (sortColumn === null) return;
+let valA=a.row[sortColumn];
+let valB=b.row[sortColumn];
 
-      rows.sort((a, b) => {
-        let valA = a[sortColumn];
-        let valB = b[sortColumn];
+const cleanA=valA?valA.toString().replace(/,/g,""):"";
+const cleanB=valB?valB.toString().replace(/,/g,""):"";
 
-        const cleanA = valA ? valA.toString().replace(/,/g, "") : "";
-        const cleanB = valB ? valB.toString().replace(/,/g, "") : "";
+const numA=parseFloat(cleanA);
+const numB=parseFloat(cleanB);
 
-        const numA = parseFloat(cleanA);
-        const numB = parseFloat(cleanB);
+if(!isNaN(numA)&&!isNaN(numB))
+return sortAsc?numA-numB:numB-numA;
 
-        if (!isNaN(numA) && !isNaN(numB)) return sortAsc ? numA - numB : numB - numA;
+valA=valA?valA.toString().toLowerCase():"";
+valB=valB?valB.toString().toLowerCase():"";
 
-        valA = valA ? valA.toString().toLowerCase() : "";
-        valB = valB ? valB.toString().toLowerCase() : "";
+if(valA<valB)return sortAsc?-1:1;
+if(valA>valB)return sortAsc?1:-1;
 
-        if (valA < valB) return sortAsc ? -1 : 1;
-        if (valA > valB) return sortAsc ? 1 : -1;
-        return 0;
-      });
-    }
+return 0;
 
-    showLoading();
+});
 
-    fetch(API_URL + "?endpoint=forwebsite")
-      .then(r => r.json())
-      .then(data => {
-        headers = data.headers;
-        rows = data.rows;
-        bgColors = data.bgColors;
-        render();
-        hideLoading();
-      })
-      .catch(err => {
-        console.error("FETCH FAILED:", err);
-        hideLoading();
-      });
+}
 
-    search.addEventListener('input', e => render(e.target.value));
-  </script>
+function render(filter=""){
+
+const f=filter.toLowerCase();
+
+tableHead.innerHTML="";
+tableBody.innerHTML="";
+
+if(!headers.length)return;
+
+const mugIndex=headers.indexOf("Mug");
+const moveTypeIndex=headers.indexOf("Move Type");
+
+const headerRow=document.createElement("tr");
+
+headers.forEach((h,i)=>{
+
+const th=document.createElement("th");
+
+let arrow="";
+if(sortColumn===i)arrow=sortAsc?" ▲":" ▼";
+
+th.textContent=h+arrow;
+
+if(i!==mugIndex){
+
+th.onclick=()=>{
+if(sortColumn===i)sortAsc=!sortAsc;
+else{
+sortColumn=i;
+sortAsc=false;
+}
+
+sortData();
+render(search.value);
+
+};
+
+}
+
+headerRow.appendChild(th);
+
+});
+
+tableHead.appendChild(headerRow);
+
+let html="";
+
+const rowsToRender=data.filter(obj=>{
+if(!filter)return true;
+return obj.row.some(cell=>
+cell&&cell.toString().toLowerCase().includes(f)
+);
+});
+
+rowsToRender.forEach(obj=>{
+
+const r=obj.row;
+const colors=obj.colors;
+
+html+="<tr>";
+
+r.forEach((cell,i)=>{
+
+let style="";
+if(colors&&colors[i])style=` style="background:${colors[i]}"`;
+
+html+=`<td${style}>`;
+
+if(i===mugIndex&&cell){
+
+html+=`<img class="mug" src="${cell}">`;
+
+}
+else if(i===moveTypeIndex&&cell){
+
+html+=`<img class="moveType" src="${cell}">`;
+
+}
+else{
+
+if(!isNaN(cell)&&cell!=="")
+html+=Number(cell).toLocaleString(undefined,{maximumFractionDigits:2});
+else
+html+=cell??"";
+
+}
+
+html+="</td>";
+
+});
+
+html+="</tr>";
+
+});
+
+tableBody.innerHTML=html;
+
+}
+
+showLoading();
+
+fetch(API_URL+"?endpoint=forwebsite")
+.then(r=>r.json())
+.then(dataAPI=>{
+
+headers=dataAPI.headers;
+
+data=dataAPI.rows.map((row,i)=>({
+row:row,
+colors:dataAPI.bgColors?dataAPI.bgColors[i]:[]
+}));
+
+render();
+
+hideLoading();
+
+})
+.catch(err=>{
+console.error("FETCH FAILED:",err);
+hideLoading();
+});
+
+search.addEventListener("input",e=>{
+render(e.target.value);
+});
+
+</script>
+
 </body>
 </html>
