@@ -343,6 +343,7 @@ tableBody.innerHTML=html;
 
 }
 
+showLoading()
 const cached = localStorage.getItem(CACHE_KEY);
 
 if (cached) {
@@ -397,32 +398,9 @@ fetch(API_URL + "?endpoint=forwebsite")
   hideLoading();
 });
 
-headers = dataAPI.headers;
-
-hiddenColumns = headers
-  .map((h,i) => (!h || h.trim()==="") ? i : -1)
-  .filter(i => i !== -1);
-
-data = dataAPI.rows.map((row,i)=>({
-  row: row,
-  colors: dataAPI.bgColors ? dataAPI.bgColors[i] : []
-}));
-
-render();
-
-hideLoading();
-
-})
-.catch(err=>{
-console.error("FETCH FAILED:",err);
-hideLoading();
+search.addEventListener("input", e => {
+  render(e.target.value);
 });
-
-search.addEventListener("input",e=>{
-render(e.target.value);
-});
-
 </script>
-
 </body>
 </html>
