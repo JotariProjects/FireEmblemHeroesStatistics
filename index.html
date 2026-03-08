@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -40,7 +39,7 @@ margin:0 auto;
 padding:1rem;
 }
 
-/* NEW: dataset buttons */
+/* Dataset buttons */
 #datasetButtons{
 display:flex;
 gap:.5rem;
@@ -59,6 +58,12 @@ cursor:pointer;
 
 #datasetButtons button:hover{
 background:#2a2f7a;
+}
+
+#datasetButtons button.active {
+background:#7c7cff;
+color:#fff;
+border-color:#7c7cff;
 }
 
 .toolbar{
@@ -155,12 +160,6 @@ color:var(--accent);
 text-decoration:none;
 }
 
-#datasetButtons button.active {
-  background:#7c7cff;
-  color:#fff;
-  border-color:#7c7cff;
-}
-  
 #loading{
 position:fixed;
 inset:0;
@@ -177,7 +176,6 @@ z-index:999;
 display:none;
 }
 </style>
-
 </head>
 
 <body>
@@ -211,8 +209,6 @@ Hosted free on GitHub Pages · Data from Google Sheets
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycby2SIa1xkldeimH7OrkltvK9BoPE07PELtGEriB5gPZ8GSzu42ErrvZo3M73S5k8aBycg/exec";
-const CACHE_KEY = "sheets_cache";
-const CACHE_DURATION = 60 * 60 * 1000;
 
 const search = document.getElementById("search");
 const loading = document.getElementById("loading");
@@ -227,34 +223,38 @@ let sortColumn = null;
 let sortAsc = true;
 let datasets = {};
 
+// Show/hide loading overlay
 function showLoading(){ loading.style.display = "flex"; }
 function hideLoading(){ loading.style.display = "none"; }
 
-function setActiveButton(name) {
-  Array.from(buttonContainer.children).forEach(btn => {
-    if(btn.textContent === name.replace("ForWebsite","")) btn.classList.add("active");
+// Strip "ForWebsite" prefix for display
+function getButtonName(rangeName){
+  return rangeName.startsWith("ForWebsite") ? rangeName.slice("ForWebsite".length) : rangeName;
+}
+
+// Highlight the currently active dataset button
+function setActiveButton(name){
+  const btnName = getButtonName(name);
+  Array.from(buttonContainer.children).forEach(btn=>{
+    if(btn.textContent === btnName) btn.classList.add("active");
     else btn.classList.remove("active");
   });
 }
 
+// Load a dataset into the table
 function loadDataset(name){
   const dataset = datasets[name];
-
   headers = dataset.headers;
   hiddenColumns = headers
    .map((h,i)=> (!h || h.trim()==="") ? i : -1)
    .filter(i => i !== -1);
-
-  data = dataset.rows.map((row,i)=>({
-    row,
-    colors: dataset.bgColors ? dataset.bgColors[i] : []
-  }));
-
+  data = dataset.rows.map((row,i)=>({ row, colors: dataset.bgColors ? dataset.bgColors[i] : [] }));
   sortColumn=null;
   render(search.value);
-  setActiveButton(name); // highlight this button
+  setActiveButton(name);
 }
 
+// Sorting
 function sortData(){
   if(sortColumn === null) return;
   data.sort((a,b)=>{
@@ -271,6 +271,7 @@ function sortData(){
   });
 }
 
+// Render table
 function render(filter=""){
   const f = filter.toLowerCase();
   tableHead.innerHTML="";
@@ -322,27 +323,29 @@ function render(filter=""){
   tableBody.innerHTML = html;
 }
 
+// Load data from API
 showLoading();
-
 fetch(API_URL + "?endpoint=forwebsite")
 .then(r => r.json())
 .then(dataAPI => {
 
   datasets = dataAPI.ranges;
 
+  // Create buttons
   Object.keys(datasets).forEach(name=>{
     const btn = document.createElement("button");
-    btn.textContent = name.replace("ForWebsite_","");
+    btn.textContent = getButtonName(name);
     btn.onclick = ()=>loadDataset(name);
     buttonContainer.appendChild(btn);
   });
 
- const defaultDataset = "ForWebsiteVotes"; // <-- put your preferred default here
- if(datasets[defaultDataset]) loadDataset(defaultDataset);
- else {
-  const first = Object.keys(datasets)[0];
-  if(first) loadDataset(first);
-}
+  // Set default dataset
+  const defaultDataset = "ForWebsiteVotes"; // <-- change to your preferred default
+  if(datasets[defaultDataset]) loadDataset(defaultDataset);
+  else {
+    const first = Object.keys(datasets)[0];
+    if(first) loadDataset(first);
+  }
 
   hideLoading();
 
