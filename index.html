@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -37,6 +38,27 @@ main{
 max-width:1680px;
 margin:0 auto;
 padding:1rem;
+}
+
+/* NEW: dataset buttons */
+#datasetButtons{
+display:flex;
+gap:.5rem;
+margin-bottom:.75rem;
+flex-wrap:wrap;
+}
+
+#datasetButtons button{
+padding:.4rem .7rem;
+border-radius:8px;
+border:1px solid #2a2f7a;
+background:#1b2050;
+color:var(--text);
+cursor:pointer;
+}
+
+#datasetButtons button:hover{
+background:#2a2f7a;
 }
 
 .toolbar{
@@ -91,12 +113,12 @@ z-index:1;
 
 td:nth-child(2),
 th:nth-child(2){
-  position:sticky;
-  left:120px; /* width of first column */
-  background:#1b2050;
-  z-index:1;
+position:sticky;
+left:120px;
+background:#1b2050;
+z-index:1;
 }
-  
+
 tbody tr{
 transition:background .15s ease;
 }
@@ -133,7 +155,6 @@ color:var(--accent);
 text-decoration:none;
 }
 
-/* LOADING OVERLAY */
 #loading{
 position:fixed;
 inset:0;
@@ -150,6 +171,7 @@ z-index:999;
 display:none;
 }
 </style>
+
 </head>
 
 <body>
@@ -159,6 +181,8 @@ display:none;
 </header>
 
 <main>
+
+<div id="datasetButtons"></div>
 
 <div class="toolbar">
 <input id="search" placeholder="Search…">
@@ -182,21 +206,40 @@ Hosted free on GitHub Pages · Data from Google Sheets
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycby2SIa1xkldeimH7OrkltvK9BoPE07PELtGEriB5gPZ8GSzu42ErrvZo3M73S5k8aBycg/exec";
 const CACHE_KEY = "sheets_cache";
-const CACHE_DURATION = 60 * 60 * 1000; // 60 minutes
+const CACHE_DURATION = 60 * 60 * 1000;
 
 const search = document.getElementById("search");
 const loading = document.getElementById("loading");
 const tableHead = document.querySelector("#dataTable thead");
 const tableBody = document.querySelector("#dataTable tbody");
+const buttonContainer = document.getElementById("datasetButtons");
 
 let headers = [];
 let data = [];
 let hiddenColumns = [];
 let sortColumn = null;
 let sortAsc = true;
+let datasets = {};
 
 function showLoading(){ loading.style.display = "flex"; }
 function hideLoading(){ loading.style.display = "none"; }
+
+function loadDataset(name){
+  const dataset = datasets[name];
+
+  headers = dataset.headers;
+  hiddenColumns = headers
+   .map((h,i)=> (!h || h.trim()==="") ? i : -1)
+   .filter(i => i !== -1);
+
+  data = dataset.rows.map((row,i)=>({
+    row,
+    colors: dataset.bgColors ? dataset.bgColors[i] : []
+  }));
+
+  sortColumn=null;
+  render(search.value);
+}
 
 function sortData(){
   if(sortColumn === null) return;
@@ -231,7 +274,8 @@ function render(filter=""){
     if(i!==mugIndex){
       arrow = sortColumn===i?(sortAsc?" ▲":" ▼"):" ▲▼";
       th.onclick = () => {
-        if(sortColumn===i) sortAsc=!sortAsc; else sortColumn=i, sortAsc=false;
+        if(sortColumn===i) sortAsc=!sortAsc;
+        else {sortColumn=i; sortAsc=false;}
         sortData(); render(search.value);
       }
     }
@@ -260,46 +304,36 @@ function render(filter=""){
     });
     html+="</tr>";
   });
+
   tableBody.innerHTML = html;
 }
 
-// Show loading
 showLoading();
 
-// Load cached data if valid
-const cached = localStorage.getItem(CACHE_KEY);
-if(cached){
-  const cacheObj = JSON.parse(cached);
-  if(Date.now() - cacheObj.time < CACHE_DURATION){
-    headers = cacheObj.headers;
-    data = cacheObj.data;
-    hiddenColumns = headers
-   .map((h,i) => (!h || h.trim() === "") ? i : -1)
-   .filter(i => i !== -1);
-    render(search.value);
-    hideLoading();
-  }
-}
-
-// Fetch fresh data in background
 fetch(API_URL + "?endpoint=forwebsite")
 .then(r => r.json())
 .then(dataAPI => {
-  headers = dataAPI.headers;
-  hiddenColumns = headers
-  .map((h,i) => (!h || h.trim() === "") ? i : -1)
-  .filter(i => i !== -1);
-  data = dataAPI.rows.map((row,i)=>({row, colors: dataAPI.bgColors?dataAPI.bgColors[i]:[]}));
-  render(search.value);
-  localStorage.setItem(CACHE_KEY, JSON.stringify({time:Date.now(), headers, data}));
+
+  datasets = dataAPI.ranges;
+
+  Object.keys(datasets).forEach(name=>{
+    const btn = document.createElement("button");
+    btn.textContent = name.replace("ForWebsite_","");
+    btn.onclick = ()=>loadDataset(name);
+    buttonContainer.appendChild(btn);
+  });
+
+  const first = Object.keys(datasets)[0];
+  if(first) loadDataset(first);
+
   hideLoading();
+
 })
 .catch(err=>{
   console.error("FETCH FAILED:",err);
   hideLoading();
 });
 
-// Search input
 search.addEventListener("input", e => render(e.target.value));
 </script>
 
