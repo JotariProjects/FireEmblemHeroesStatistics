@@ -265,7 +265,9 @@ if(cached){
   if(Date.now() - cacheObj.time < CACHE_DURATION){
     headers = cacheObj.headers;
     data = cacheObj.data;
-    hiddenColumns = headers.map((h,i)=>(!h||h.trim()==="")?-1:i).filter(i=>i!==-1);
+    hiddenColumns = headers
+   .map((h,i) => (!h || h.trim() === "") ? i : -1)
+   .filter(i => i !== -1);
     render(search.value);
     hideLoading();
   }
@@ -276,7 +278,9 @@ fetch(API_URL + "?endpoint=forwebsite")
 .then(r => r.json())
 .then(dataAPI => {
   headers = dataAPI.headers;
-  hiddenColumns = headers.map((h,i)=>(!h||h.trim()==="")?-1:i).filter(i=>i!==-1);
+  hiddenColumns = headers
+  .map((h,i) => (!h || h.trim() === "") ? i : -1)
+  .filter(i => i !== -1);
   data = dataAPI.rows.map((row,i)=>({row, colors: dataAPI.bgColors?dataAPI.bgColors[i]:[]}));
   render(search.value);
   localStorage.setItem(CACHE_KEY, JSON.stringify({time:Date.now(), headers, data}));
