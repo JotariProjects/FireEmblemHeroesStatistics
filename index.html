@@ -155,6 +155,12 @@ color:var(--accent);
 text-decoration:none;
 }
 
+#datasetButtons button.active {
+  background:#7c7cff;
+  color:#fff;
+  border-color:#7c7cff;
+}
+  
 #loading{
 position:fixed;
 inset:0;
@@ -224,6 +230,13 @@ let datasets = {};
 function showLoading(){ loading.style.display = "flex"; }
 function hideLoading(){ loading.style.display = "none"; }
 
+function setActiveButton(name) {
+  Array.from(buttonContainer.children).forEach(btn => {
+    if(btn.textContent === name.replace("ForWebsite","")) btn.classList.add("active");
+    else btn.classList.remove("active");
+  });
+}
+
 function loadDataset(name){
   const dataset = datasets[name];
 
@@ -239,6 +252,7 @@ function loadDataset(name){
 
   sortColumn=null;
   render(search.value);
+  setActiveButton(name); // highlight this button
 }
 
 function sortData(){
@@ -323,8 +337,12 @@ fetch(API_URL + "?endpoint=forwebsite")
     buttonContainer.appendChild(btn);
   });
 
+ const defaultDataset = "ForWebsiteVotes"; // <-- put your preferred default here
+ if(datasets[defaultDataset]) loadDataset(defaultDataset);
+ else {
   const first = Object.keys(datasets)[0];
   if(first) loadDataset(first);
+}
 
   hideLoading();
 
