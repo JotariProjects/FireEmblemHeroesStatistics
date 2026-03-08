@@ -126,7 +126,6 @@ text-decoration:none;
 }
 
 /* LOADING OVERLAY */
-
 #loading{
 position:fixed;
 inset:0;
@@ -142,7 +141,6 @@ z-index:999;
 .hidden{
 display:none;
 }
-
 </style>
 </head>
 
@@ -174,233 +172,124 @@ Hosted free on GitHub Pages · Data from Google Sheets
 <div id="loading">⏳ Loading...</div>
 
 <script>
-
-const API_URL="https://script.google.com/macros/s/AKfycby2SIa1xkldeimH7OrkltvK9BoPE07PELtGEriB5gPZ8GSzu42ErrvZo3M73S5k8aBycg/exec";
-
+const API_URL = "https://script.google.com/macros/s/AKfycby2SIa1xkldeimH7OrkltvK9BoPE07PELtGEriB5gPZ8GSzu42ErrvZo3M73S5k8aBycg/exec";
 const CACHE_KEY = "sheets_cache";
 const CACHE_DURATION = 60 * 60 * 1000; // 60 minutes
-  
-const search=document.getElementById("search");
-const loading=document.getElementById("loading");
 
-const tableHead=document.querySelector("#dataTable thead");
-const tableBody=document.querySelector("#dataTable tbody");
+const search = document.getElementById("search");
+const loading = document.getElementById("loading");
+const tableHead = document.querySelector("#dataTable thead");
+const tableBody = document.querySelector("#dataTable tbody");
 
-let headers=[];
-let data=[];
+let headers = [];
+let data = [];
 let hiddenColumns = [];
-let sortColumn=null;
-let sortAsc=true;
+let sortColumn = null;
+let sortAsc = true;
 
-function showLoading(){
-loading.style.display = "flex";
-}
-
-function hideLoading(){
-loading.style.display = "none";
-}
-
+function showLoading(){ loading.style.display = "flex"; }
+function hideLoading(){ loading.style.display = "none"; }
 
 function sortData(){
-
-if(sortColumn===null)return;
-
-data.sort((a,b)=>{
-
-let valA=a.row[sortColumn];
-let valB=b.row[sortColumn];
-
-const cleanA=valA?valA.toString().replace(/,/g,""):"";
-const cleanB=valB?valB.toString().replace(/,/g,""):"";
-
-const numA=parseFloat(cleanA);
-const numB=parseFloat(cleanB);
-
-if(!isNaN(numA)&&!isNaN(numB))
-return sortAsc?numA-numB:numB-numA;
-
-valA=valA?valA.toString().toLowerCase():"";
-valB=valB?valB.toString().toLowerCase():"";
-
-if(valA<valB)return sortAsc?-1:1;
-if(valA>valB)return sortAsc?1:-1;
-
-return 0;
-
-});
-
+  if(sortColumn === null) return;
+  data.sort((a,b)=>{
+    let valA=a.row[sortColumn], valB=b.row[sortColumn];
+    const cleanA=valA?valA.toString().replace(/,/g,""):"";
+    const cleanB=valB?valB.toString().replace(/,/g,""):"";
+    const numA=parseFloat(cleanA), numB=parseFloat(cleanB);
+    if(!isNaN(numA) && !isNaN(numB)) return sortAsc?numA-numB:numB-numA;
+    valA = valA?valA.toString().toLowerCase():"";
+    valB = valB?valB.toString().toLowerCase():"";
+    if(valA<valB) return sortAsc?-1:1;
+    if(valA>valB) return sortAsc?1:-1;
+    return 0;
+  });
 }
 
 function render(filter=""){
+  const f = filter.toLowerCase();
+  tableHead.innerHTML="";
+  tableBody.innerHTML="";
+  if(!headers.length) return;
 
-const f=filter.toLowerCase();
+  const mugIndex = headers.indexOf("Mug");
+  const moveTypeIndex = headers.indexOf("Move Type");
 
-tableHead.innerHTML="";
-tableBody.innerHTML="";
+  const headerRow = document.createElement("tr");
+  headers.forEach((h,i)=>{
+    if(hiddenColumns.includes(i)) return;
+    const th = document.createElement("th");
+    let arrow = "";
+    if(i!==mugIndex){
+      arrow = sortColumn===i?(sortAsc?" ▲":" ▼"):" ▲▼";
+      th.onclick = () => {
+        if(sortColumn===i) sortAsc=!sortAsc; else sortColumn=i, sortAsc=false;
+        sortData(); render(search.value);
+      }
+    }
+    th.textContent = h + arrow;
+    headerRow.appendChild(th);
+  });
+  tableHead.appendChild(headerRow);
 
-if(!headers.length)return;
+  let html="";
+  const rowsToRender = data.filter(obj=>{
+    if(!filter) return true;
+    return obj.row.some(cell=>cell && cell.toString().toLowerCase().includes(f));
+  });
 
-const mugIndex=headers.indexOf("Mug");
-const moveTypeIndex=headers.indexOf("Move Type");
-
-const headerRow=document.createElement("tr");
-
-headers.forEach((h,i)=>{
-
-if(hiddenColumns.includes(i)) return;
-  
-const th=document.createElement("th");
-
-  
-let arrow;
-
-if (i === mugIndex) {
-  arrow = ""; // mug column not sortable
-} else if (sortColumn === i) {
-  arrow = sortAsc ? " ▲" : " ▼";
-} else {
-  arrow = " ▲▼";
+  rowsToRender.forEach(obj=>{
+    const r=obj.row, colors=obj.colors;
+    html+="<tr>";
+    r.forEach((cell,i)=>{
+      if(hiddenColumns.includes(i)) return;
+      let style = (colors && colors[i])?` style="background:${colors[i]}"`:"";
+      html+=`<td${style}>`;
+      if(i===mugIndex && cell) html+=`<img class="mug" src="${cell}">`;
+      else if(i===moveTypeIndex && cell) html+=`<img class="moveType" src="${cell}">`;
+      else html+=(!isNaN(cell)&&cell!=="")?Number(cell).toLocaleString(undefined,{maximumFractionDigits:2}):(cell??"");
+      html+="</td>";
+    });
+    html+="</tr>";
+  });
+  tableBody.innerHTML = html;
 }
 
-th.textContent = h + arrow;
+// Show loading
+showLoading();
 
-  
-if(i!==mugIndex){
-
-th.onclick=()=>{
-if(sortColumn===i)sortAsc=!sortAsc;
-else{
-sortColumn=i;
-sortAsc=false;
-}
-
-sortData();
-render(search.value);
-
-};
-
-}
-
-headerRow.appendChild(th);
-
-});
-
-tableHead.appendChild(headerRow);
-
-let html="";
-
-const rowsToRender=data.filter(obj=>{
-if(!filter)return true;
-return obj.row.some(cell=>
-cell&&cell.toString().toLowerCase().includes(f)
-);
-});
-
-rowsToRender.forEach(obj=>{
-
-const r=obj.row;
-const colors=obj.colors;
-
-html+="<tr>";
-
-r.forEach((cell,i)=>{
-
-if(hiddenColumns.includes(i)) return;
-  
-let style="";
-if(colors&&colors[i])style=` style="background:${colors[i]}"`;
-
-html+=`<td${style}>`;
-
-if(i===mugIndex&&cell){
-
-html+=`<img class="mug" src="${cell}">`;
-
-}
-else if(i===moveTypeIndex&&cell){
-
-html+=`<img class="moveType" src="${cell}">`;
-
-}
-else{
-
-if(!isNaN(cell)&&cell!=="")
-html+=Number(cell).toLocaleString(undefined,{maximumFractionDigits:2});
-else
-html+=cell??"";
-
-}
-
-html+="</td>";
-
-});
-
-html+="</tr>";
-
-});
-
-tableBody.innerHTML=html;
-
-}
-
-showLoading()
+// Load cached data if valid
 const cached = localStorage.getItem(CACHE_KEY);
-
-if (cached) {
-
+if(cached){
   const cacheObj = JSON.parse(cached);
-
-  if (Date.now() - cacheObj.time < CACHE_DURATION) {
-
+  if(Date.now() - cacheObj.time < CACHE_DURATION){
     headers = cacheObj.headers;
     data = cacheObj.data;
-
-    hiddenColumns = headers
-      .map((h,i) => (!h || h.trim()==="") ? i : -1)
-      .filter(i => i !== -1);
-
-    render();
+    hiddenColumns = headers.map((h,i)=>(!h||h.trim()==="")?-1:i).filter(i=>i!==-1);
+    render(search.value);
     hideLoading();
-    return;
-
   }
-
 }
 
+// Fetch fresh data in background
 fetch(API_URL + "?endpoint=forwebsite")
 .then(r => r.json())
 .then(dataAPI => {
-
   headers = dataAPI.headers;
-
-  hiddenColumns = headers
-    .map((h,i) => (!h || h.trim()==="") ? i : -1)
-    .filter(i => i !== -1);
-
-  data = dataAPI.rows.map((row,i)=>({
-    row: row,
-    colors: dataAPI.bgColors ? dataAPI.bgColors[i] : []
-  }));
-
-  render();
-
-  localStorage.setItem(CACHE_KEY, JSON.stringify({
-    time: Date.now(),
-    headers: headers,
-    data: data
-  }));
-
+  hiddenColumns = headers.map((h,i)=>(!h||h.trim()==="")?-1:i).filter(i=>i!==-1);
+  data = dataAPI.rows.map((row,i)=>({row, colors: dataAPI.bgColors?dataAPI.bgColors[i]:[]}));
+  render(search.value);
+  localStorage.setItem(CACHE_KEY, JSON.stringify({time:Date.now(), headers, data}));
   hideLoading();
-
 })
 .catch(err=>{
   console.error("FETCH FAILED:",err);
   hideLoading();
 });
 
-search.addEventListener("input", e => {
-  render(e.target.value);
-});
+// Search input
+search.addEventListener("input", e => render(e.target.value));
 </script>
+
 </body>
 </html>
