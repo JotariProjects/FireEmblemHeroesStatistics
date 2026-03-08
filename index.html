@@ -190,12 +190,13 @@ let sortColumn=null;
 let sortAsc=true;
 
 function showLoading(){
-loading.classList.remove("hidden");
+loading.style.display = "flex";
 }
 
 function hideLoading(){
-loading.classList.add("hidden");
+loading.style.display = "none";
 }
+
 
 function sortData(){
 
