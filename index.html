@@ -288,9 +288,6 @@ function render(filter=""){
   const moveTypeIndex = headers.indexOf("Move Type");
 
   const headerRow = document.createElement("tr");
-
-  document.getElementById("count").textContent =
-  rowsToRender.length + " rows";
   
   headers.forEach((h,i)=>{
     if(hiddenColumns.includes(i)) return;
@@ -345,6 +342,9 @@ const rowsToRender = data.filter(obj=>{
     cell && cell.toString().toLowerCase().includes(f)
   );
 });
+
+document.getElementById("count").textContent =
+rowsToRender.length + " rows";
 
   rowsToRender.forEach(obj=>{
     const r=obj.row, colors=obj.colors;
