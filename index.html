@@ -19,10 +19,31 @@
 body{
 margin:0;
 font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu;
-background:linear-gradient(180deg,#0b0e1a,var(--bg));
+
+background:
+linear-gradient(rgba(11,14,26,0.85), rgba(15,18,32,0.9)),
+url("background.jpg");
+
+background-size:cover;
+background-position:center;
+background-attachment:fixed;
+
 color:var(--text);
 }
 
+<div id="bgImage"></div>
+
+#bgImage{
+position:fixed;
+inset:0;
+
+background:url("https://vote9.campaigns.fire-emblem-heroes.com/assets/img/bg_pc.jpg") center/cover no-repeat;
+
+z-index:-1;
+opacity:0.35;
+filter:blur(2px);
+}
+  
 header{
 padding:1.25rem 1rem;
 border-bottom:1px solid #232766;
