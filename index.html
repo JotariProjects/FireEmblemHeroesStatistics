@@ -47,7 +47,7 @@ margin:0 auto;
 padding:1rem;
 }
 
-/* Dataset buttons */
+/* metric buttons */
 
 #datasetButtons{
 display:flex;
@@ -75,20 +75,28 @@ color:#fff;
 border-color:#7c7cff;
 }
 
+/* toolbar */
+
 .toolbar{
 display:flex;
 gap:.5rem;
 margin-bottom:.75rem;
+flex-wrap:wrap;
 }
 
-input{
-flex:1;
+select,input{
 padding:.6rem .7rem;
 border-radius:10px;
 border:1px solid #2a2f7a;
 background:var(--panel);
 color:var(--text);
 }
+
+input{
+flex:1;
+}
+
+/* table */
 
 table{
 width:100%;
@@ -144,7 +152,8 @@ tbody tr:hover{
 background:#232766;
 }
 
-/* YOU WANTED BLACK TEXT */
+/* black cell text */
+
 #dataTable td{
 color:black !important;
 }
@@ -168,11 +177,6 @@ text-align:center;
 padding:1.5rem 0;
 }
 
-a{
-color:var(--accent);
-text-decoration:none;
-}
-
 #loading{
 position:fixed;
 inset:0;
@@ -180,13 +184,7 @@ background:rgba(0,0,0,.65);
 display:flex;
 align-items:center;
 justify-content:center;
-font-size:2rem;
-color:var(--accent;
 z-index:999;
-}
-
-.hidden{
-display:none;
 }
 </style>
 </head>
@@ -202,7 +200,15 @@ display:none;
 <div id="datasetButtons"></div>
 
 <div class="toolbar">
+
+<select id="categorySelect">
+<option value="No_Shadow_Cup">No Shadow Cup</option>
+<option value="Combined">Combined</option>
+<option value="Shadow_Cup">Shadow Cup</option>
+</select>
+
 <input id="search" placeholder="Search…">
+
 </div>
 
 <div id="count"></div>
@@ -221,7 +227,7 @@ Vote for Amy in the Shadow Cup
 </footer>
 
 <div id="loading">
-<img src="https://i.imgur.com/1cXgq23.png" alt="Loading">
+<img src="https://i.imgur.com/1cXgq23.png">
 </div>
 
 <script>
@@ -233,6 +239,7 @@ const loading=document.getElementById("loading");
 const tableHead=document.querySelector("#dataTable thead");
 const tableBody=document.querySelector("#dataTable tbody");
 const buttonContainer=document.getElementById("datasetButtons");
+const categorySelect=document.getElementById("categorySelect");
 
 let headers=[];
 let data=[];
@@ -241,19 +248,38 @@ let sortColumn=null;
 let sortAsc=true;
 let datasets={};
 
+let selectedMetric="Votes";
+let selectedCategory="No_Shadow_Cup";
+
 function showLoading(){loading.style.display="flex";}
 function hideLoading(){loading.style.display="none";}
 
-function getButtonName(rangeName){
-return(rangeName.startsWith("ForWebsite")?rangeName.slice("ForWebsite".length):rangeName).replace(/_/g," ");
+function loadCurrentDataset(){
+
+const datasetName=
+"ForWebsite"+
+selectedMetric+
+selectedCategory;
+
+if(datasets[datasetName]){
+
+loadDataset(datasetName);
+
 }
 
-function setActiveButton(name){
-const btnName=getButtonName(name);
+}
+
+function setActiveButton(metric){
+
 Array.from(buttonContainer.children).forEach(btn=>{
-if(btn.textContent===btnName)btn.classList.add("active");
-else btn.classList.remove("active");
+
+if(btn.textContent===metric)
+btn.classList.add("active");
+else
+btn.classList.remove("active");
+
 });
+
 }
 
 function loadDataset(name){
@@ -276,7 +302,6 @@ sortColumn=null;
 
 render(search.value);
 
-setActiveButton(name);
 }
 
 function sortData(){
@@ -365,7 +390,7 @@ render(search.value);
 
 }
 
-th.innerHTML=`<div>${h}</div><div>${arrow}</div>`;
+th.innerHTML=`${h} ${arrow}`;
 
 headerRow.appendChild(th);
 
@@ -411,10 +436,10 @@ let style=(colors&&colors[i])?` style="background:${colors[i]}"`:"";
 html+=`<td${style}>`;
 
 if(i===mugIndex&&cell)
-html+=`<img class="mug" src="${cell}">`;
+html+=`<img class="mug" src="${encodeURI(cell)}">`;
 
 else if(i===moveTypeIndex&&cell)
-html+=`<img class="moveType" src="${cell}">`;
+html+=`<img class="moveType" src="${encodeURI(cell)}">`;
 
 else
 html+=(!isNaN(cell)&&cell!=="")
@@ -441,27 +466,39 @@ fetch(API_URL+"?endpoint=forwebsite")
 
 datasets=dataAPI.ranges;
 
-Object.keys(datasets)
-.sort((a,b)=>getButtonName(a).localeCompare(getButtonName(b)))
-.forEach(name=>{
+const metrics=["Rank","Percentage","Votes"];
+
+metrics.forEach(metric=>{
 
 const btn=document.createElement("button");
 
-btn.textContent=getButtonName(name);
+btn.textContent=metric;
 
-btn.onclick=()=>loadDataset(name);
+btn.onclick=()=>{
+
+selectedMetric=metric;
+
+setActiveButton(metric);
+
+loadCurrentDataset();
+
+};
 
 buttonContainer.appendChild(btn);
 
 });
 
-const defaultDataset="ForWebsiteVotes";
+setActiveButton(selectedMetric);
 
-if(datasets[defaultDataset])loadDataset(defaultDataset);
-else{
-const first=Object.keys(datasets)[0];
-if(first)loadDataset(first);
-}
+categorySelect.addEventListener("change",e=>{
+
+selectedCategory=e.target.value;
+
+loadCurrentDataset();
+
+});
+
+loadCurrentDataset();
 
 hideLoading();
 
