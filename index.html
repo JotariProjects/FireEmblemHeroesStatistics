@@ -256,14 +256,26 @@ function hideLoading(){loading.style.display="none";}
 
 function loadCurrentDataset(){
 
-const datasetName=
-"ForWebsite"+
-selectedCategory+
+const datasetName =
+"ForWebsite" +
+selectedCategory +
+"_" +
 selectedMetric;
+
+console.log("Trying to load dataset:", datasetName);
+
+console.log("Available datasets:", Object.keys(datasets));
 
 if(datasets[datasetName]){
 
+console.log("Dataset FOUND:", datasetName);
+
 loadDataset(datasetName);
+
+}
+else{
+
+console.error("Dataset NOT FOUND:", datasetName);
 
 }
 
