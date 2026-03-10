@@ -392,12 +392,14 @@ fetch(API_URL + "?endpoint=forwebsite")
   datasets = dataAPI.ranges;
 
   // Create buttons
-  Object.keys(datasets).forEach(name=>{
+  Object.keys(datasets)
+  .sort((a,b)=>getButtonName(a).localeCompare(getButtonName(b)))
+  .forEach(name=>{
     const btn = document.createElement("button");
     btn.textContent = getButtonName(name);
     btn.onclick = ()=>loadDataset(name);
     buttonContainer.appendChild(btn);
-  });
+});
 
   // Set default dataset
   const defaultDataset = "ForWebsiteVotes"; // <-- change to your preferred default
